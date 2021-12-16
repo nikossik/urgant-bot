@@ -13,7 +13,6 @@ def tatler_parser(query:str) -> list:
     url = ''.join(url_parts)
 
     html = requests.get(url).text
-
     soup = BeautifulSoup(html, "html.parser")
     
     a_els = soup.find_all('a', {'class':'summary-item-tracking__hed-link summary-item__hed-link summary-item__hed-link--underline-disable'})
@@ -41,19 +40,16 @@ def tatler_parser(query:str) -> list:
 
 def sobaka_parser(query:str) -> list:
     url = 'https://www.sobaka.ru/search/all?q='
+    links, texts = [], []
 
     for word in query.split():
         url += f"{word}+"
     url = url[:-1]
 
-    print(url)
-
     html = requests.get(url).text
     soup = BeautifulSoup(html, "html.parser")
 
     a_els = soup.find_all('a', {'class' : 'b-media__title-link'})
-
-    links, texts = [], []
 
     for a_el in a_els:
         links.append(f"http://sobaka.ru{a_el['href']}")
@@ -62,14 +58,47 @@ def sobaka_parser(query:str) -> list:
         html = requests.get(link).text
         soup = BeautifulSoup(html,  "html.parser")
 
-        div_els = soup.find_all('div', 
-                                {'class':'b-editors-text b-editors-text--lead'})
+        div_els = soup.find_all('div', {'class':'b-editors-text b-editors-text--lead'})
 
         text = str(div_els).replace('[', '').replace(']', '')
-        text = re.sub(r"<.*?>", '', text)
-        text = re.sub(r"\xa0|\n", '', text)
-        text = re.sub(r"\s+", ' ', text)
+        text = re.sub(r"<.*?>", "", text)
+        text = re.sub(r"\xa0|\n", " ", text)
+        text = re.sub(r"\s+", " ", text)
 
         if text != '': texts.append(text)
+
+    return texts
+
+def esquire_parser(query:str) -> list:
+    url = "https://esquire.ru/search/?query="
+    texts, links = [], []
+
+    for word in query.split():
+        url+= f'{word}+'
+    
+    url = url[:-1]
+
+    html = requests.get(url).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    div_els = soup.find_all('div', {'class':'article-listed is-item'})
+    
+    for div_el in div_els[:10]:
+        for a_el in div_el.find_all('a'):
+            links.append(f"https://esquire.ru{a_el['href']}")
+
+    for link in links:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        text = soup.find_all('div', {'class':'text-page'})
+        p_els = re.findall(r'<p>(.*?)</p>', str(text))
+
+        for i in range(len(p_els)):
+            p_els[i] = re.sub(r"<.*?>", "", p_els[i])
+            p_els[i] = re.sub(r"\xa0|\n", " ", p_els[i])
+            p_els[i] = re.sub(r"\s+", " ", p_els[i])
+
+        texts += p_els
 
     return texts
