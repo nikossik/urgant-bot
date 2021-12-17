@@ -1,1 +1,0 @@
-Try to change sobaka and tatler parsers in order to make code more readable and easier to understand

@@ -102,3 +102,35 @@ def esquire_parser(query:str) -> list:
         texts += p_els
 
     return texts
+
+def kommersant_parser(query:str) -> list:
+    url = 'https://www.kommersant.ru/search/results?search_query='
+    links, texts = [], []
+
+    for word in query.split():
+        url += f'{word}+'
+    url = url[:-1]
+
+    html = requests.get(url).text
+    soup = BeautifulSoup(html,"html.parser")
+
+    a_els = soup.find_all('a', {'class':'uho__link uho__link--overlay'})
+
+    for a_el in a_els:
+        links.append(f"https://www.kommersant.ru{a_el['href']}")
+
+    for link in links:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        p_els = soup.find_all('p', {'class':'doc__text'})
+
+        text = str(p_els).replace('[', '').replace(']', '')
+        text = re.sub(r"<.*?>", "", text)
+        text = re.sub(r"\xa0|\n", " ", text)
+        text = re.sub(r"\s+", " ", text)
+
+        texts.append(text)
+
+    return texts
+kommersant_parser('сергей лавров')
