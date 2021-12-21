@@ -1,6 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from time import sleep
+
+link_limit = 10
 
 def create_url(url_start:str, query:str) -> str:
     url = url_start
@@ -14,6 +20,8 @@ def preprocess_text(corpus) -> list:
     for i in range(len(corpus)):
         corpus[i] = str(corpus[i]).replace('[', '').replace(']', '')
         corpus[i] = re.sub(r"<.*?>", "", corpus[i])
+        corpus[i] = re.sub(r"[a-zA-Z]", " ", corpus[i])
+        corpus[i] = re.sub(r"[{}]|[()]", " ", corpus[i])
         corpus[i] = re.sub(r"\xa0|\n", " ", corpus[i])
         corpus[i] = re.sub(r"\s+", " ", corpus[i])
 
@@ -21,6 +29,8 @@ def preprocess_text(corpus) -> list:
 
 
 def tatler_parser(query:str) -> list:
+    global link_limit
+
     url_parts = ['https://www.tatler.ru/search?q=','&sort=score+desc']
     links = []
 
@@ -38,7 +48,7 @@ def tatler_parser(query:str) -> list:
     for a_el in a_els:
         links.append(f"https://www.tatler.ru/{a_el['href']}")
 
-    for link in links:
+    for link in links[:link_limit]:
         html = requests.get(link).text
         soup = BeautifulSoup(html, "html.parser")
 
@@ -50,6 +60,8 @@ def tatler_parser(query:str) -> list:
     return preprocess_text(p_els)
 
 def sobaka_parser(query:str) -> list:
+    global link_limit
+    
     url = create_url('https://www.sobaka.ru/search/all?q=', query)
     links, texts = [], []
 
@@ -61,7 +73,7 @@ def sobaka_parser(query:str) -> list:
     for a_el in a_els:
         links.append(f"http://sobaka.ru{a_el['href']}")
 
-    for link in links:
+    for link in links[:link_limit]:
         html = requests.get(link).text
         soup = BeautifulSoup(html,  "html.parser")
 
@@ -74,6 +86,8 @@ def sobaka_parser(query:str) -> list:
     return texts
 
 def esquire_parser(query:str) -> list:
+    global link_limit
+    
     url = create_url("https://esquire.ru/search/?query=", query)
     texts, links = [], []
 
@@ -86,7 +100,7 @@ def esquire_parser(query:str) -> list:
         for a_el in div_el.find_all('a'):
             links.append(f"https://esquire.ru{a_el['href']}")
 
-    for link in links:
+    for link in links[:link_limit]:
         html = requests.get(link).text
         soup = BeautifulSoup(html, "html.parser")
 
@@ -98,6 +112,8 @@ def esquire_parser(query:str) -> list:
     return texts
 
 def kommersant_parser(query:str) -> list:
+    global link_limit
+    
     url = create_url('https://www.kommersant.ru/search/results?search_query=', query)
     print(url)
     links, texts = [], []
@@ -110,7 +126,7 @@ def kommersant_parser(query:str) -> list:
     for a_el in a_els:
         links.append(f"https://www.kommersant.ru{a_el['href']}")
 
-    for link in links:
+    for link in links[:link_limit]:
         html = requests.get(link).text
         soup = BeautifulSoup(html, "html.parser")
 
@@ -122,6 +138,8 @@ def kommersant_parser(query:str) -> list:
     return texts
 
 def rbc_parser(query:str) -> list:
+    global link_limit
+    
     url = create_url('https://www.rbc.ru/search/?project=rbcnews&query=', query)
     links, texts = [], []
     
@@ -133,7 +151,7 @@ def rbc_parser(query:str) -> list:
     for a_el in a_els:
         links.append(a_el['href'])
 
-    for link in links: 
+    for link in links[:link_limit]: 
         html  = requests.get(link).text
         soup = BeautifulSoup(html, "html.parser")
 
@@ -142,3 +160,71 @@ def rbc_parser(query:str) -> list:
         texts.append(preprocess_text(p_els)[0])
 
     return texts
+
+def dozhd_parser(query:str) -> list:
+    global link_limit
+    
+    url  = create_url('https://tvrain.ru/archive/?query=', query)
+    links, texts = [], []
+
+    html = requests.get(url).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    a_els = soup.find_all('a', {'class': 'chrono_list__item__info__name chrono_list__item__info__name--nocursor'})
+
+    for a_el in a_els:
+        links.append(f"https://tvrain.ru/{a_el['href']}")
+
+
+    for link in links[:link_limit]:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        div_els = soup.find_all('div', {'class':'document-content__text document-content__text--wide'})
+         
+        texts.append(preprocess_text(div_els)[0])
+
+    print(texts)
+
+#dozhd_parser('путин')
+ 
+def dp_parsing(query:str) -> list:
+    driver = webdriver.Chrome(ChromeDriverManager().install())
+
+    driver.get('https://www.dp.ru/search')
+
+    search_input = driver.find_element(By.TAG_NAME,"input")
+    search_input.send_keys(str(query))
+
+    search_button = driver.find_element(By.XPATH, "/html/body/app-root/div/div[1]/div[2]/app-search/div/div/div[1]/form/div[2]/div[3]/div[2]/div[1]/button")
+    search_button.click()
+
+    sleep(5)
+
+    html = driver.page_source
+
+    driver.close()
+
+    links, texts = [], []
+
+    soup = BeautifulSoup(html, "html.parser")
+    a_els = soup.find_all('a', {'class': 'article-fav-block-headline'})
+
+    for a_el in a_els:
+        links.append(f"https://dp.ru{a_el['href']}")
+
+    for link in links:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        div_els = soup.find_all('div', {'class': 'paragraph paragraph-text'})
+
+        for div_el in div_els:
+            text = preprocess_text([div_el.text])[0]
+            texts.append(text)
+
+    print(texts)
+
+
+
+dp_parsing('коронавирус')
