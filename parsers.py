@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from time import sleep
 
-link_limit = 10
+link_limit = 10 #maximum links parsed
 
 def create_url(url_start:str, query:str) -> str:
     url = url_start
@@ -189,8 +189,9 @@ def dozhd_parser(query:str) -> list:
 #dozhd_parser('путин')
  
 def dp_parsing(query:str) -> list:
-    driver = webdriver.Chrome(ChromeDriverManager().install())
+    global link_limit
 
+    driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get('https://www.dp.ru/search')
 
     search_input = driver.find_element(By.TAG_NAME,"input")
@@ -202,7 +203,6 @@ def dp_parsing(query:str) -> list:
     sleep(5)
 
     html = driver.page_source
-
     driver.close()
 
     links, texts = [], []
@@ -213,7 +213,7 @@ def dp_parsing(query:str) -> list:
     for a_el in a_els:
         links.append(f"https://dp.ru{a_el['href']}")
 
-    for link in links:
+    for link in links[:link_limit]:
         html = requests.get(link).text
         soup = BeautifulSoup(html, "html.parser")
 
@@ -223,8 +223,56 @@ def dp_parsing(query:str) -> list:
             text = preprocess_text([div_el.text])[0]
             texts.append(text)
 
+    return texts
+
+def forbes_parser(query:str) -> list:
+    global link_limit
+    ok = False
+
+    driver = webdriver.Chrome(ChromeDriverManager().install())
+    driver.get('https://www.forbes.ru/')
+
+    while not ok:
+        try:
+            sleep(2)
+
+            search_button = driver.find_element(By.XPATH, '//*[@id="__layout"]/div/div[1]/header/div[1]/div/button[2]')
+            search_button.click()
+
+            search_input = driver.find_element(By.XPATH,'//*[@id="__layout"]/div/div[1]/header/div[2]/div/label/input')
+            search_input.send_keys(str(query))
+
+            sleep(5)
+
+            ok = True     
+        except:
+            pass
+
+    html = driver.page_source
+    driver.close()
+
+    links, texts = [], []
+
+    soup = BeautifulSoup(html, "html.parser")
+    a_els = soup.find_all('a', {'class', 'Lg33y'})
+
+    print(a_els)
+
+    for a_el in a_els:
+        links.append(f"https://forbes.ru{a_el['href']}")
+
+    #print(links)
+
+    for link in links[:link_limit]:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        p_els = soup.find_all('p', {'class':'yl27R'})
+
+        for p_el in p_els:
+            text = preprocess_text([p_el.text])[0]
+            texts.append(text)
+
     print(texts)
 
-
-
-dp_parsing('коронавирус')
+forbes_parser('илон маск')
