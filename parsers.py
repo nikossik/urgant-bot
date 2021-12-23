@@ -271,7 +271,7 @@ def forbes_parser(query:str) -> list:
             text = preprocess_text([p_el.text])[0]
             texts.append(text)
 
-    return 
+    return texts
     
 def sports_ru_parser(query:str) -> list:
     global link_limit
@@ -311,8 +311,33 @@ def sports_ru_parser(query:str) -> list:
             text = preprocess_text([p_el.text])[0]
             texts.append(text)
 
-    print(texts)
+    return texts
 
-sports_ru_parser('лионель месси')
+def village_parser(query:str) -> list:
+    global link_limit
+
+    url = create_url('https://www.the-village.ru/search?query=', query)
+    links, texts = [], []
+
+    html = requests.get(url).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    a_els = soup.find_all('a', {'class':'screens-SearchResult-_-SearchResultItem--SearchResultItem__link'})
+
+    for a_el in a_els:
+        links.append(f"https://www.the-village.ru{a_el['href']}")
+
+    for link in links[:link_limit]:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        div_el = soup.find_all('div', {'class':'article-text'})
+
+        soup = BeautifulSoup(str(div_el), "html.parser")
+        p_els = soup.find_all('p')
+
+        texts.extend(preprocess_text(p_els))
+
+    return texts
     
 
