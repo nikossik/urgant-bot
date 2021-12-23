@@ -261,8 +261,6 @@ def forbes_parser(query:str) -> list:
     for a_el in a_els:
         links.append(f"https://forbes.ru{a_el['href']}")
 
-    #print(links)
-
     for link in links[:link_limit]:
         html = requests.get(link).text
         soup = BeautifulSoup(html, "html.parser")
@@ -273,6 +271,48 @@ def forbes_parser(query:str) -> list:
             text = preprocess_text([p_el.text])[0]
             texts.append(text)
 
+    return 
+    
+def sports_ru_parser(query:str) -> list:
+    global link_limit
+
+    url = create_url('https://www.sports.ru/search/?query=', query)
+    link, links, texts = '', [], []
+
+    html = requests.get(url).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    div_el = soup.find_all('div', {'class': 'overBox'})
+    soup = BeautifulSoup(str(div_el), "html.parser")
+    a_el = soup.find_all('a')[0]
+
+    link = a_el['href']
+
+    html = requests.get(link).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    h_els = soup.find_all('h2', {'class':'titleH2'})
+
+    for h_el in h_els:
+        soup = BeautifulSoup(str(h_el), "html.parser")
+        a_el = soup.find_all('a')[0]
+        links.append(a_el['href'])
+
+    for link in links[:link_limit]:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        div_els = soup.find_all('div', {'class':'material-item__content js-mediator-article'})
+
+        soup = BeautifulSoup(str(div_els), "html.parser")
+        p_els = soup.find_all('p')
+
+        for p_el in p_els:
+            text = preprocess_text([p_el.text])[0]
+            texts.append(text)
+
     print(texts)
 
-forbes_parser('илон маск')
+sports_ru_parser('лионель месси')
+    
+
