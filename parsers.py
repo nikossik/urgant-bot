@@ -1,4 +1,3 @@
-from typing import Text
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -28,7 +27,7 @@ def preprocess_text(corpus) -> list:
     return corpus
 
 
-def tatler_parser(query:str) -> list:
+def tatler_parser(query:str, results:list) -> list:
     global link_limit
 
     url_parts = ['https://www.tatler.ru/search?q=','&sort=score+desc']
@@ -57,9 +56,9 @@ def tatler_parser(query:str) -> list:
         text = str(div_el).replace('[', '').replace(']','')
         p_els = re.findall(r'<p>(.*?)</p>', text)
 
-    return preprocess_text(p_els)
+    results.extend(preprocess_text(p_els))
 
-def sobaka_parser(query:str) -> list:
+def sobaka_parser(query:str, results:list) -> list:
     global link_limit
     
     url = create_url('https://www.sobaka.ru/search/all?q=', query)
@@ -83,9 +82,9 @@ def sobaka_parser(query:str) -> list:
 
         if len(preprocessed_text) != 0 : texts.append(preprocess_text(div_els)[0])
 
-    return texts
+    results.extend(texts)
 
-def esquire_parser(query:str) -> list:
+def esquire_parser(query:str, results:list) -> list:
     global link_limit
     
     url = create_url("https://esquire.ru/search/?query=", query)
@@ -109,13 +108,12 @@ def esquire_parser(query:str) -> list:
 
         texts += preprocess_text(p_els)
 
-    return texts
+    results.extend(texts)
 
-def kommersant_parser(query:str) -> list:
+def kommersant_parser(query:str, results:list) -> list:
     global link_limit
     
     url = create_url('https://www.kommersant.ru/search/results?search_query=', query)
-    print(url)
     links, texts = [], []
 
     html = requests.get(url).text
@@ -131,13 +129,10 @@ def kommersant_parser(query:str) -> list:
         soup = BeautifulSoup(html, "html.parser")
 
         p_els = soup.find_all('p', {'class':'doc__text'})
-        #print(p_els)
 
-        texts.append(preprocess_text(p_els)[0])
+        results.extend(preprocess_text(p_els))
 
-    return texts
-
-def rbc_parser(query:str) -> list:
+def rbc_parser(query:str, results:list) -> list:
     global link_limit
     
     url = create_url('https://www.rbc.ru/search/?project=rbcnews&query=', query)
@@ -157,11 +152,9 @@ def rbc_parser(query:str) -> list:
 
         p_els = soup.find_all('p')
 
-        texts.append(preprocess_text(p_els)[0])
-
-    return texts
+        results.extend(preprocess_text(p_els))
  
-def dp_parsing(query:str) -> list:
+def dp_parsing(query:str, results:list) -> list:
     global link_limit
 
     driver = webdriver.Chrome(ChromeDriverManager().install())
@@ -196,9 +189,9 @@ def dp_parsing(query:str) -> list:
             text = preprocess_text([div_el.text])[0]
             texts.append(text)
 
-    return texts
+    results.extend(texts)
 
-def forbes_parser(query:str) -> list:
+def forbes_parser(query:str, results:list) -> list:
     global link_limit
     ok = False
 
@@ -242,9 +235,9 @@ def forbes_parser(query:str) -> list:
             text = preprocess_text([p_el.text])[0]
             texts.append(text)
 
-    return texts
+    results.extend(texts)
     
-def sports_ru_parser(query:str) -> list:
+def sports_ru_parser(query:str, results:list) -> list:
     global link_limit
 
     url = create_url('https://www.sports.ru/search/?query=', query)
@@ -282,9 +275,9 @@ def sports_ru_parser(query:str) -> list:
             text = preprocess_text([p_el.text])[0]
             texts.append(text)
 
-    return texts
+    results.extend(texts)
 
-def village_parser(query:str) -> list:
+def village_parser(query:str, results:list) -> list:
     global link_limit
 
     url = create_url('https://www.the-village.ru/search?query=', query)
@@ -307,19 +300,15 @@ def village_parser(query:str) -> list:
         soup = BeautifulSoup(str(div_el), "html.parser")
         p_els = soup.find_all('p')
 
-        texts.extend(preprocess_text(p_els))
+        results.extend(preprocess_text(p_els))
 
-    return texts
-
-def flow_parser(query:str) -> list:
+def flow_parser(query:str, results:list) -> list:
     global link_limit
 
     url = create_url('https://the-flow.ru/catalog/search/index?title=', query)
     links, texts = [], []
 
     html = requests.get(url).text
-
-    print(html)
     soup = BeautifulSoup(html, "html.parser")
 
     a_els = soup.find_all('a', {'class':'search_article_item__title'})
@@ -327,23 +316,18 @@ def flow_parser(query:str) -> list:
     for a_el in a_els:
         links.append(f"https://the-flow.ru{a_el['href']}")
 
-    print(links)
-
     for link in links[:link_limit]:
         html = requests.get(link).text
         soup = BeautifulSoup(html, "html.parser")
 
         div_el = soup.find_all('div', {'class':'article__text'}) 
-        print(div_el)
 
         soup = BeautifulSoup(str(div_el), "html.parser")
         p_els = soup.find_all('p')
 
-        texts.extend(preprocess_text(p_els))
+        results.extend(preprocess_text(p_els))
 
-    return texts
-
-def elle_parser(query:str) -> list:
+def elle_parser(query:str, results:list) -> list:
     global link_limit 
 
     url = 'https://www.elle.ru/'
@@ -382,10 +366,4 @@ def elle_parser(query:str) -> list:
         
         p_els = soup.find_all('p')
 
-        texts.extend(preprocess_text(p_els))
-
-    print(texts)
-
-elle_parser('меган маркл')
-
-    
+        results.extend(preprocess_text(p_els))
