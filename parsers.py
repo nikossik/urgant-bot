@@ -2,7 +2,6 @@ from typing import Text
 import requests
 from bs4 import BeautifulSoup
 import re
-from requests.utils import select_proxy
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
@@ -343,3 +342,50 @@ def flow_parser(query:str) -> list:
         texts.extend(preprocess_text(p_els))
 
     return texts
+
+def elle_parser(query:str) -> list:
+    global link_limit 
+
+    url = 'https://www.elle.ru/'
+    links, texts = [], []
+
+    driver = webdriver.Chrome(ChromeDriverManager().install())
+    driver.get(url)
+
+    sleep(2)
+
+    search_button = driver.find_element(By.XPATH, '//*[@id="app"]/div[2]/header/div[2]/div[1]/div[1]/div/nav/ul/li[10]/button')
+    search_button.click()
+
+    search_input = driver.find_element(By.XPATH, '//*[@id="app"]/div[2]/div[2]/div/div/div[1]/input')
+    search_input.send_keys(str(query))
+
+    sleep(1)
+
+    html = driver.page_source
+    driver.close()
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    a_els = soup.find_all('a', {'class':'announce-inline__title-link'})
+
+    for a_el in a_els:
+        links.append(f"https://elle.ru{a_el['href']}")
+
+    for link in links[:link_limit]:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        div_els = soup.find_all('div', {'class':'block-text'})
+
+        soup = BeautifulSoup(str(div_els), "html.parser")
+        
+        p_els = soup.find_all('p')
+
+        texts.extend(preprocess_text(p_els))
+
+    print(texts)
+
+elle_parser('меган маркл')
+
+    
