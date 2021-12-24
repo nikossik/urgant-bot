@@ -1,6 +1,8 @@
+from typing import Text
 import requests
 from bs4 import BeautifulSoup
 import re
+from requests.utils import select_proxy
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
@@ -20,7 +22,6 @@ def preprocess_text(corpus) -> list:
     for i in range(len(corpus)):
         corpus[i] = str(corpus[i]).replace('[', '').replace(']', '')
         corpus[i] = re.sub(r"<.*?>", "", corpus[i])
-        corpus[i] = re.sub(r"[a-zA-Z]", " ", corpus[i])
         corpus[i] = re.sub(r"[{}]|[()]", " ", corpus[i])
         corpus[i] = re.sub(r"\xa0|\n", " ", corpus[i])
         corpus[i] = re.sub(r"\s+", " ", corpus[i])
@@ -160,33 +161,6 @@ def rbc_parser(query:str) -> list:
         texts.append(preprocess_text(p_els)[0])
 
     return texts
-
-def dozhd_parser(query:str) -> list:
-    global link_limit
-    
-    url  = create_url('https://tvrain.ru/archive/?query=', query)
-    links, texts = [], []
-
-    html = requests.get(url).text
-    soup = BeautifulSoup(html, "html.parser")
-
-    a_els = soup.find_all('a', {'class': 'chrono_list__item__info__name chrono_list__item__info__name--nocursor'})
-
-    for a_el in a_els:
-        links.append(f"https://tvrain.ru/{a_el['href']}")
-
-
-    for link in links[:link_limit]:
-        html = requests.get(link).text
-        soup = BeautifulSoup(html, "html.parser")
-
-        div_els = soup.find_all('div', {'class':'document-content__text document-content__text--wide'})
-         
-        texts.append(preprocess_text(div_els)[0])
-
-    print(texts)
-
-#dozhd_parser('путин')
  
 def dp_parsing(query:str) -> list:
     global link_limit
@@ -256,8 +230,6 @@ def forbes_parser(query:str) -> list:
     soup = BeautifulSoup(html, "html.parser")
     a_els = soup.find_all('a', {'class', 'Lg33y'})
 
-    print(a_els)
-
     for a_el in a_els:
         links.append(f"https://forbes.ru{a_el['href']}")
 
@@ -312,5 +284,62 @@ def sports_ru_parser(query:str) -> list:
             texts.append(text)
 
     return texts
-    
 
+def village_parser(query:str) -> list:
+    global link_limit
+
+    url = create_url('https://www.the-village.ru/search?query=', query)
+    links, texts = [], []
+
+    html = requests.get(url).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    a_els = soup.find_all('a', {'class':'screens-SearchResult-_-SearchResultItem--SearchResultItem__link'})
+
+    for a_el in a_els:
+        links.append(f"https://www.the-village.ru{a_el['href']}")
+
+    for link in links[:link_limit]:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        div_el = soup.find_all('div', {'class':'article-text'})
+
+        soup = BeautifulSoup(str(div_el), "html.parser")
+        p_els = soup.find_all('p')
+
+        texts.extend(preprocess_text(p_els))
+
+    return texts
+
+def flow_parser(query:str) -> list:
+    global link_limit
+
+    url = create_url('https://the-flow.ru/catalog/search/index?title=', query)
+    links, texts = [], []
+
+    html = requests.get(url).text
+
+    print(html)
+    soup = BeautifulSoup(html, "html.parser")
+
+    a_els = soup.find_all('a', {'class':'search_article_item__title'})
+
+    for a_el in a_els:
+        links.append(f"https://the-flow.ru{a_el['href']}")
+
+    print(links)
+
+    for link in links[:link_limit]:
+        html = requests.get(link).text
+        soup = BeautifulSoup(html, "html.parser")
+
+        div_el = soup.find_all('div', {'class':'article__text'}) 
+        print(div_el)
+
+        soup = BeautifulSoup(str(div_el), "html.parser")
+        p_els = soup.find_all('p')
+
+        texts.extend(preprocess_text(p_els))
+
+    return texts
