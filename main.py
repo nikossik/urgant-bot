@@ -26,6 +26,7 @@ def load_celeb(message):
 
 	preds = qg.predict(celebrity)
 
+<<<<<<< HEAD
 	try:
 		if len(preds) == 0:
 			bot.send_message(message.chat.id, 'Error, nothing was generated!')
@@ -44,6 +45,21 @@ def load_celeb(message):
 			bot.send_message(message.chat.id, text)
 	except:
 		bot.send_message(message.chat.id, 'Something went wrong!')
+=======
+	if len(preds) == 0:
+		bot.send_message(message.chat.id, 'Error, nothing was generated!')
+	else:
+		bot.send_message(message.chat.id , 'Successfully generated questions!')
+		print(preds[:10])
+
+		text = ''
+
+		for i, question in enumerate(preds[:10]):
+			text += f'{i+1}. {question} \n'
+
+		bot.send_message(message.chat.id, text)
+
+>>>>>>> 2fa13066d55c29dc6b495650edc1cd1eda36c7f0
 
 print('Bot started!')
 bot.polling()

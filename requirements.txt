@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 transformers[sentencepiece]==4.11.2
 pyTelegramBotAPI==3.8.2
 deep-translator==1.5.4
@@ -7,3 +8,12 @@ tokenizers==0.10.3
 nltk==3.6.3
 requests==2.26.0
 regex==2021.8.28
+=======
+transformers[sentencepiece]==4.11.2
+pyTelegramBotAPI==3.8.2
+deep-translator==1.5.4
+selenium==3.141.0
+webdriver-manager==3.4.2
+tokenizers==0.10.3
+nltk==3.6.3
+>>>>>>> 2fa13066d55c29dc6b495650edc1cd1eda36c7f0
