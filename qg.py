@@ -1,7 +1,6 @@
 from time import sleep
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from parsers import sobaka_parser
 from webdriver_manager.chrome import ChromeDriverManager
 import requests
 from typing import Text
@@ -22,7 +21,7 @@ class QgTrans:
         self.nlp = nlp
         self.link_limit = link_limit
 
-    def preprocess_text(corpus) -> list:
+    def preprocess_text(self, corpus) -> list:
         for i in range(len(corpus)):
             corpus[i] = str(corpus[i]).replace('[', '').replace(']', '')
             corpus[i] = re.sub(r"<.*?>", "", corpus[i])
@@ -256,28 +255,28 @@ class QgTrans:
 
         return texts
 
-    def rbc_parser(self, query:str) -> list:
+    # def rbc_parser(self, query:str) -> list:
         
-        url = self.create_url('https://www.rbc.ru/search/?project=rbcnews&query=', query)
-        links, texts = [], []
+    #     url = self.create_url('https://www.rbc.ru/search/?project=rbcnews&query=', query)
+    #     links, texts = [], []
         
-        html = requests.get(url).text
-        soup = BeautifulSoup(html, "html.parser")
+    #     html = requests.get(url).text
+    #     soup = BeautifulSoup(html, "html.parser")
 
-        a_els = soup.find_all('a', {'class':'search-item__link'})
+    #     a_els = soup.find_all('a', {'class':'search-item__link'})
         
-        for a_el in a_els:
-            links.append(a_el['href'])
+    #     for a_el in a_els:
+    #         links.append(a_el['href'])
 
-        for link in links[:self.link_limit]: 
-            html  = requests.get(link).text
-            soup = BeautifulSoup(html, "html.parser")
+    #     for link in links[:self.link_limit]: 
+    #         html  = requests.get(link).text
+    #         soup = BeautifulSoup(html, "html.parser")
 
-            p_els = soup.find_all('p')
+    #         p_els = soup.find_all('p')
 
-            texts.append(self.preprocess_text(p_els)[0])
+    #         texts.append(self.preprocess_text(p_els)[0])
 
-        return texts
+    #     return texts
  
     def dp_parsing(self, query:str) -> list:
 
@@ -425,36 +424,32 @@ class QgTrans:
 
         return texts
 
-    def flow_parser(self, query:str) -> list:
+    # def flow_parser(self, query:str) -> list:
 
-        url = self.create_url('https://the-flow.ru/catalog/search/index?title=', query)
-        links, texts = [], []
+    #     url = self.create_url('https://the-flow.ru/catalog/search/index?title=', query)
+    #     links, texts = [], []
 
-        html = requests.get(url).text
+    #     html = requests.get(url).text
 
-        print(html)
-        soup = BeautifulSoup(html, "html.parser")
+    #     soup = BeautifulSoup(html, "html.parser")
 
-        a_els = soup.find_all('a', {'class':'search_article_item__title'})
+    #     a_els = soup.find_all('a', {'class':'search_article_item__title'})
 
-        for a_el in a_els:
-            links.append(f"https://the-flow.ru{a_el['href']}")
+    #     for a_el in a_els:
+    #         links.append(f"https://the-flow.ru{a_el['href']}")
 
-        print(links)
+    #     for link in links[:self.link_limit]:
+    #         html = requests.get(link).text
+    #         soup = BeautifulSoup(html, "html.parser")
 
-        for link in links[:self.link_limit]:
-            html = requests.get(link).text
-            soup = BeautifulSoup(html, "html.parser")
+    #         div_el = soup.find_all('div', {'class':'article__text'}) 
 
-            div_el = soup.find_all('div', {'class':'article__text'}) 
-            print(div_el)
+    #         soup = BeautifulSoup(str(div_el), "html.parser")
+    #         p_els = soup.find_all('p')
 
-            soup = BeautifulSoup(str(div_el), "html.parser")
-            p_els = soup.find_all('p')
+    #         texts.extend(self.preprocess_text(p_els))
 
-            texts.extend(self.preprocess_text(p_els))
-
-        return texts
+    #     return texts
 
 
     def parse(self, name, lim=5000):
@@ -465,14 +460,14 @@ class QgTrans:
         sobaka = self.sobaka_parser(name)
         esquire = self.esquire_parser(name)
         kommersant = self.kommersant_parser(name)
-        rbc = self.rbc_parser(name)
+        #rbc = self.rbc_parser(name)
         dp = self.dp_parsing(name)
         forbes = self.forbes_parser(name)
         sports_ru = self.sports_ru_parser(name)
         village = self.village_parser(name)
-        flow = self.flow_parser(name)
+        #flow = self.flow_parser(name)
 
-        parsed = ria + cosmo + mh + tatler + sobaka + esquire + kommersant + rbc + dp + forbes + sports_ru + village + flow
+        parsed = ria + cosmo + mh + tatler + sobaka + esquire + kommersant + dp + forbes + sports_ru + village
  
         for i in range(len(parsed)):
             parsed[i] = parsed[i][:lim]
@@ -504,7 +499,7 @@ class QgTrans:
 
     def predict(self, name):
         corpus = self.parse(name, lim=1000)
-        self.preprocessing(corpus)
+        self.preprocess_text(corpus)
         print(corpus)
         ru_to_en = self.translate_ru_to_en(corpus)
         qg = self.qg_en_to_en(ru_to_en)
