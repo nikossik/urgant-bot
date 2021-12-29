@@ -75,8 +75,7 @@ class QgTrans:
                 main_text += text.text
 
             res.append(main_text)
-
-        return res
+        return self.translate_ru_to_en(res)
 
     def parse_text_cosmo(self, name):
         url = "https://www.cosmo.ru/search/?query="
@@ -111,8 +110,7 @@ class QgTrans:
                 main_text += text.text
             
             res.append(main_text)
-
-        return res
+        return self.translate_ru_to_en(res)
 
     def parse_text_mh(self, name):
         url = "https://www.mhealth.ru/search/?query="
@@ -148,7 +146,7 @@ class QgTrans:
             
             res.append(main_text)
 
-        return res
+        return self.translate_ru_to_en(res)
 
     def tatler_parser(self, query:str) -> list:
 
@@ -178,7 +176,7 @@ class QgTrans:
             text = str(div_el).replace('[', '').replace(']','')
             p_els = re.findall(r'<p>(.*?)</p>', text)
 
-        return self.preprocess_text(p_els)
+        return self.translate_ru_to_en(self.preprocess_text(p_els))
 
     def sobaka_parser(self, query:str) -> list:
 
@@ -202,8 +200,7 @@ class QgTrans:
             preprocessed_text = self.preprocess_text(div_els)
 
             if len(preprocessed_text) != 0 : texts.append(self.preprocess_text(div_els)[0])
-
-        return texts
+        return self.translate_ru_to_en(texts)
 
     def esquire_parser(self, query:str) -> list:
         
@@ -227,13 +224,11 @@ class QgTrans:
             p_els = re.findall(r'<p>(.*?)</p>', str(text))
 
             texts += self.preprocess_text(p_els)
-
-        return texts
+        return self.translate_ru_to_en(texts)
 
     def kommersant_parser(self, query:str) -> list:
         
         url = self.create_url('https://www.kommersant.ru/search/results?search_query=', query)
-        print(url)
         links, texts = [], []
 
         html = requests.get(url).text
@@ -253,7 +248,7 @@ class QgTrans:
 
             texts.append(self.preprocess_text(p_els)[0])
 
-        return texts
+        return self.translate_ru_to_en(texts)
 
     # def rbc_parser(self, query:str) -> list:
         
@@ -312,91 +307,91 @@ class QgTrans:
                 text = self.preprocess_text([div_el.text])[0]
                 texts.append(text)
 
-        return texts
+        return self.translate_ru_to_en(texts)
 
-    def forbes_parser(self, query:str) -> list:
-        ok = False
+    # def forbes_parser(self, query:str) -> list:
+    #     ok = False
 
-        driver = webdriver.Chrome(ChromeDriverManager().install())
-        driver.get('https://www.forbes.ru/')
+    #     driver = webdriver.Chrome(ChromeDriverManager().install())
+    #     driver.get('https://www.forbes.ru/')
 
-        while not ok:
-            try:
-                sleep(2)
+    #     while not ok:
+    #         try:
+    #             sleep(2)
 
-                search_button = driver.find_element(By.XPATH, '//*[@id="__layout"]/div/div[1]/header/div[1]/div/button[2]')
-                search_button.click()
+    #             search_button = driver.find_element(By.XPATH, '//*[@id="__layout"]/div/div[1]/header/div[1]/div/button[2]')
+    #             search_button.click()
 
-                search_input = driver.find_element(By.XPATH,'//*[@id="__layout"]/div/div[1]/header/div[2]/div/label/input')
-                search_input.send_keys(str(query))
+    #             search_input = driver.find_element(By.XPATH,'//*[@id="__layout"]/div/div[1]/header/div[2]/div/label/input')
+    #             search_input.send_keys(str(query))
 
-                sleep(5)
+    #             sleep(5)
 
-                ok = True     
-            except:
-                pass
+    #             ok = True     
+    #         except:
+    #             pass
 
-        html = driver.page_source
-        driver.close()
+    #     html = driver.page_source
+    #     driver.close()
 
-        links, texts = [], []
+    #     links, texts = [], []
 
-        soup = BeautifulSoup(html, "html.parser")
-        a_els = soup.find_all('a', {'class', 'Lg33y'})
+    #     soup = BeautifulSoup(html, "html.parser")
+    #     a_els = soup.find_all('a', {'class', 'Lg33y'})
 
-        for a_el in a_els:
-            links.append(f"https://forbes.ru{a_el['href']}")
+    #     for a_el in a_els:
+    #         links.append(f"https://forbes.ru{a_el['href']}")
 
-        for link in links[:self.link_limit]:
-            html = requests.get(link).text
-            soup = BeautifulSoup(html, "html.parser")
+    #     for link in links[:self.link_limit]:
+    #         html = requests.get(link).text
+    #         soup = BeautifulSoup(html, "html.parser")
 
-            p_els = soup.find_all('p', {'class':'yl27R'})
+    #         p_els = soup.find_all('p', {'class':'yl27R'})
 
-            for p_el in p_els:
-                text = self.preprocess_text([p_el.text])[0]
-                texts.append(text)
+    #         for p_el in p_els:
+    #             text = self.preprocess_text([p_el.text])[0]
+    #             texts.append(text)
 
-        return texts
+    #     return self.translate_ru_to_en(texts)
     
-    def sports_ru_parser(self, query:str) -> list:
+    # def sports_ru_parser(self, query:str) -> list:
 
-        url = self.create_url('https://www.sports.ru/search/?query=', query)
-        link, links, texts = '', [], []
+    #     url = self.create_url('https://www.sports.ru/search/?query=', query)
+    #     link, links, texts = '', [], []
 
-        html = requests.get(url).text
-        soup = BeautifulSoup(html, "html.parser")
+    #     html = requests.get(url).text
+    #     soup = BeautifulSoup(html, "html.parser")
 
-        div_el = soup.find_all('div', {'class': 'overBox'})
-        soup = BeautifulSoup(str(div_el), "html.parser")
-        a_el = soup.find_all('a')[0]
+    #     div_el = soup.find_all('div', {'class': 'overBox'})
+    #     soup = BeautifulSoup(str(div_el), "html.parser")
+    #     a_el = soup.find_all('a')[0]
 
-        link = a_el['href']
+    #     link = a_el['href']
 
-        html = requests.get(link).text
-        soup = BeautifulSoup(html, "html.parser")
+    #     html = requests.get(link).text
+    #     soup = BeautifulSoup(html, "html.parser")
 
-        h_els = soup.find_all('h2', {'class':'titleH2'})
+    #     h_els = soup.find_all('h2', {'class':'titleH2'})
 
-        for h_el in h_els:
-            soup = BeautifulSoup(str(h_el), "html.parser")
-            a_el = soup.find_all('a')[0]
-            links.append(a_el['href'])
+    #     for h_el in h_els:
+    #         soup = BeautifulSoup(str(h_el), "html.parser")
+    #         a_el = soup.find_all('a')[0]
+    #         links.append(a_el['href'])
 
-        for link in links[:self.link_limit]:
-            html = requests.get(link).text
-            soup = BeautifulSoup(html, "html.parser")
+    #     for link in links[:self.link_limit]:
+    #         html = requests.get(link).text
+    #         soup = BeautifulSoup(html, "html.parser")
 
-            div_els = soup.find_all('div', {'class':'material-item__content js-mediator-article'})
+    #         div_els = soup.find_all('div', {'class':'material-item__content js-mediator-article'})
 
-            soup = BeautifulSoup(str(div_els), "html.parser")
-            p_els = soup.find_all('p')
+    #         soup = BeautifulSoup(str(div_els), "html.parser")
+    #         p_els = soup.find_all('p')
 
-            for p_el in p_els:
-                text = self.preprocess_text([p_el.text])[0]
-                texts.append(text)
+    #         for p_el in p_els:
+    #             text = self.preprocess_text([p_el.text])[0]
+    #             texts.append(text)
 
-        return texts
+    #     return self.translate_ru_to_en(texts)
 
     def village_parser(self, query:str) -> list:
 
@@ -422,7 +417,7 @@ class QgTrans:
 
             texts.extend(self.preprocess_text(p_els))
 
-        return texts
+        return self.translate_ru_to_en(texts)
 
     # def flow_parser(self, query:str) -> list:
 
@@ -462,16 +457,16 @@ class QgTrans:
         kommersant = self.kommersant_parser(name)
         #rbc = self.rbc_parser(name)
         dp = self.dp_parsing(name)
-        forbes = self.forbes_parser(name)
-        sports_ru = self.sports_ru_parser(name)
+        #forbes = self.forbes_parser(name)
+        #sports_ru = self.sports_ru_parser(name)
         village = self.village_parser(name)
         #flow = self.flow_parser(name)
 
-        parsed = ria + cosmo + mh + tatler + sobaka + esquire + kommersant + dp + forbes + sports_ru + village
+        parsed = ria + cosmo + mh + tatler + sobaka + esquire + kommersant + dp + village
  
         for i in range(len(parsed)):
             parsed[i] = parsed[i][:lim]
-
+        print(parsed)
         return parsed 
 
 
@@ -499,9 +494,6 @@ class QgTrans:
 
     def predict(self, name):
         corpus = self.parse(name, lim=1000)
-        self.preprocess_text(corpus)
-        print(corpus)
-        ru_to_en = self.translate_ru_to_en(corpus)
-        qg = self.qg_en_to_en(ru_to_en)
+        qg = self.qg_en_to_en(corpus)[:10]
         en_to_ru = self.translate_en_to_ru(qg)
         return en_to_ru
